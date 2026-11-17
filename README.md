@@ -2,105 +2,104 @@
 
 # agent-evidence (developer preview)
 
-Bounded local evidence observations, **not production certification**.
-This is a publicly available developer preview. It is not the full Hermes or MOS
-stack, nor the complete planned evidence package.
+**Give Codex or Claude Code real, bounded local file observations—not another “done” claim.**
+Explicitly select files, invoke the skill, and get independent kernel readback with
+PASS / FAIL / UNKNOWN. No hand-written manifest, inventory or receipt is needed.
+This preview verifies file readability / byte identity and explicit typed JSON
+scalar equality (for example `config.json` → `version` equals integer `2`). It
+does **not** prove tests ran/passed, general business correctness, or whole-task
+completion. It is not the full Hermes/MOS stack or production certification.
+Codex has native invocation evidence; Claude installation/discovery is tested,
+but actual model invocation remains **NOT VERIFIED** (expired OAuth; user login gate).
 
-Implemented: explicit presence/strict-JSON checks, read-only cooperative policy,
-a fixed bounded subprocess worker, exclusive receipts, and a second independent
-child that reads the receipt and recomputes the observation. Presence is content
-identity only. JSON success is object readability, not business validation.
+## Install for your tool
 
-Implemented inventory slice: explicit scope/attestation/catalog admission,
-raw-byte declaration/source pins, one-shot immutable freeze, and six inventory
-coverage views. `fixture --inventory` generates this synthetic contract.
-Implemented procedure slice: exact admitted grant/assertion bytes, complete
-declaration binding, distinct success IDs, latest-evidence freshness, acceptance,
-negative and cleanup assertions, and allowed side-effect validation. This is
-**validation of supplied evidence**, not independently verified business work.
-`evaluate` validates explicit procedure bundles; stored diagnostic reports remain
-UNKNOWN and cannot restore live admission.
-
-Implemented Hermes slice: a fixed 21-disposition catalog, versioned explicit
-sanitized inputs, job/route/registration/timestamp semantics and forbidden checks
-with zero target I/O. See [the field contract](docs/hermes-adapter.md).
-This does not establish complete compatibility with any Hermes release.
-Implemented: fixed-module executed-code/source equality, stale-cache and helper
-drift rejection, root/ancestor identity checks, and bounded declaration/check
-counts. The SHA-pinned read-only CI workflow has passed on Ubuntu and macOS with
-Python 3.11, 3.12 and 3.13; see the exact run in [Status and limits](#status-and-limits).
-The schemas remain evolving development contracts, not a complete stable package.
-Do not use for certification.
-
-## Install and exercise
-
-Python 3.11 or newer and a local POSIX filesystem are required. From the source
-checkout root, build distributions and install the wheel (not editable), preferably
-in a virtual environment. This example builds from source; it does not assume a
-PyPI release. The isolated build installs `setuptools==82.0.1` as declared in
-`pyproject.toml`; the package has no runtime dependencies.
+Requires Python 3.11+, local POSIX storage, and an already installed/authenticated
+Codex or Claude Code CLI. No PyPI release is assumed. From this source checkout:
 
 ```sh
-python -m pip install build
-python -m build
-python -m pip install dist/agent_evidence-0.1.0.dev0-py3-none-any.whl
-agent-evidence --help
-agent-evidence fixture --out /absolute/physical/path/demo-input
-agent-evidence run --input-root /absolute/physical/path/demo-input --manifest manifest.json --output-root /absolute/physical/path/demo-output
+python3.11 -m venv .venv
+. .venv/bin/activate
+python -m pip install .
+# Choose ONE, with your existing project's absolute physical path:
+agent-evidence-project install --tool codex --project /absolute/path/my-project
+agent-evidence-project install --tool claude --project /absolute/path/my-project
 ```
 
-Choose existing physical parent directories with no symlink components. Both
-leaf destinations must be new. These are synthetic fixtures only; no host scan
-or business export occurs. A successful scoped check can be `PASS`, but `run`
-returns **1**, `complete=false` without complete inventory and procedure evidence.
-Reports use `implementation_status=scoped_evidence_pipeline`. For an inventory example use
-`fixture --inventory --out NEW_INPUT`, then the same `run` command. To replay a
-stored report use `evaluate --input-root OUTPUT --bundle report.json`; this
-returns 1 and `supplied_evidence_only`, never live admission.
-For a complete scoped example, use `fixture --procedures --out NEW_INPUT`, then
-`run`: valid fresh synthetic evidence returns **0**, `complete=true`, but always
-`certified_healthy=false`. Missing, denied or invalid required evidence prevents 0.
-Evaluate its explicit bundle with
-`evaluate --input-root NEW_INPUT --bundle procedures.json` (exit 1, even when
-supplied evidence is PASS; offline evaluation cannot restore live admission).
-The fixture's synthetic `live_e2e` field is an assertion under test, not a claim
-that the fixture generator executed a business procedure.
-For the explicit Hermes example use `fixture --hermes --procedures --out NEW_INPUT`
-then `hermes run --input-root NEW_INPUT --manifest manifest.json --output-root NEW_OUTPUT`.
-The `hermes` report axis preserves all 21 required rows; byte-observation PASS
-does not turn an UNKNOWN semantic result into success.
-Exit 0 also requires complete scoped PASS for `run`. Invalid
-invocation/schema/admission returns 2; admitted runs with negative or incomplete
-evidence return 1. A receipt being written is never a completeness
-claim. `report.json` is read back and stdout is JSON, with closed-code errors on
-stderr. Input bodies and child stderr are never returned.
+Keep this environment on PATH when starting your tool in `my-project`.
+Restart an existing tool session after installation. Codex gets a project skill in
+`.agents/skills/agent-evidence`; Claude Code gets one in
+`.claude/skills/agent-evidence`. These are **native project skills**, not a shared
+plugin/extension installation protocol. No global config, hooks or MCP is installed.
+**Installation does not run checks. Automatic model invocation is disabled.**
 
-```python
-from agent_evidence import run_checks
-report = run_checks('/absolute/physical/path/demo-input', 'manifest.json',
-                    '/absolute/physical/path/another-output')
-assert report['certified_healthy'] is False
+### Codex
+
+```text
+$agent-evidence Verify config.json field version equals JSON integer 2 in this project. Write evidence to /absolute/path/my-project-evidence-001. Report scoped acceptance and observation separately; do not claim tests ran or whole-task completion.
 ```
 
-All supplied IDs must be public-safe. Format checks cannot prove an ID is not a
-secret. Roots are represented in receipts by device/inode digests, not paths.
-No environment fallback, HOME expansion, owner imports, execution plugins,
-network calls, repair actions or policy writers are provided.
+### Claude Code
 
-## Status and limits
+```text
+/agent-evidence Verify config.json field version equals JSON integer 2 in this project. Write evidence to /absolute/path/my-project-evidence-001. Report scoped acceptance and observation separately; do not claim tests ran or whole-task completion.
+```
 
-[GitHub Actions run 44087269853](https://github.com/Charles-beta-he/agent-evidence/actions/runs/44087269853)
-passed for commit `cc2598ee324a90d3306ac3f6a403bd567c8c2976`: all six
-`ubuntu-latest` / `macos-latest` × Python 3.11 / 3.12 / 3.13 jobs built distributions
-and verified clean non-editable wheel and sdist installations. This is scoped
-installed-artifact evidence using synthetic inputs, not real business E2E proof
-or a guarantee for every platform or Python version. Windows observation is
-unsupported; no Python 3.14 pass is claimed.
+Replace the example with an existing, explicitly authorized, public-safe file.
+The evidence directory must be **new and outside the project**, with an existing
+physical parent (no symlink components). No files are selected automatically.
+The helper creates a private `.agent-evidence-<random>/` control directory inside
+the project and reads the selected originals; it does not copy their bodies.
+Do not select secrets. Control manifests contain selected relative paths.
 
-[Verification notes](docs/verification.md) preserve the earlier local macOS
-verification record and reproduction/coverage details. Their statements that CI
-has not run and Linux/additional Python versions are untested describe that earlier
-snapshot; the linked CI run above supersedes those status statements only.
-There is no production release approval, production certification, business E2E
-proof or cryptographic attestation.
-See [contracts](docs/contracts.md) and [threat model](docs/threat-model.md).
+### Without a model / troubleshooting
+
+```sh
+agent-evidence-project check --project /absolute/path/my-project \
+  --output /absolute/path/my-project-evidence-002 --expect-json config.json version '2'
+# Or --json config.json for readability only (acceptance UNKNOWN).
+# Or --file README.md for presence / readable byte identity.
+```
+
+`OUT/report.json` is the unchanged kernel report; `OUT/integration.json` and stdout
+summarize the scope. Read the verdict, not just the process exit:
+
+| Scoped acceptance | Meaning |
+| --- | --- |
+| PASS | Explicit typed field equality holds on independently verified observation bytes |
+| FAIL | Field exists on verified bytes but does not equal the typed expectation |
+| UNKNOWN | No expectation, missing field, invalid JSON, unavailable evidence or byte drift |
+
+`observation_verdict` retains kernel semantics separately. Field paths are bounded
+dot-separated ASCII object keys, not expressions. Expected values are explicit JSON
+scalars (not objects/arrays), recorded in the report; **never supply secrets**.
+Types are exact: `true` differs from `1`, `2` differs from `2.0`.
+
+**The check exits 1 even for PASS**: `task_verdict=UNKNOWN`, `complete=false`,
+`certified_healthy=false`. Exit 2 means invalid invocation/admission. Install and
+uninstall exit 0 means only that installation action succeeded. A file saying
+`{"complete":true}` or a synthetic fixture never proves completion.
+
+## Uninstall
+
+```sh
+agent-evidence-project uninstall --tool codex --project /absolute/path/my-project
+agent-evidence-project uninstall --tool claude --project /absolute/path/my-project
+```
+
+Only the byte-identical installed skill is removed. Edited or extra files cause
+refusal; neighboring settings/skills are untouched. Evidence and control directories
+are retained for your review. See [integration details and limitations](docs/tool-integrations.md).
+
+## Advanced / status
+
+- [Kernel installation, synthetic examples, CI record and limits](docs/kernel-guide.md)
+- [Architecture](docs/architecture.md), [contracts](docs/contracts.md), [threat model](docs/threat-model.md)
+- [Hermes adapter](docs/hermes-adapter.md), [verification notes](docs/verification.md)
+
+The kernel remains unchanged by this integration. Its check revision identifies
+kernel code, not the skill/helper. Existing CI evidence does not certify this new
+integration. The contracts are evolving; there is no production release approval,
+business E2E proof or cryptographic attestation.
+
+[MIT license](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md)
