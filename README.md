@@ -1,8 +1,10 @@
-# agent-evidence (development slice)
+[English](README.md) | [简体中文](README.zh-CN.md)
+
+# agent-evidence (developer preview)
 
 Bounded local evidence observations, **not production certification**.
-This is an incomplete, unpublished implementation candidate. It is not the full
-Hermes or MOS stack, nor the complete planned evidence package.
+This is a publicly available developer preview. It is not the full Hermes or MOS
+stack, nor the complete planned evidence package.
 
 Implemented: explicit presence/strict-JSON checks, read-only cooperative policy,
 a fixed bounded subprocess worker, exclusive receipts, and a second independent
@@ -25,16 +27,22 @@ with zero target I/O. See [the field contract](docs/hermes-adapter.md).
 This does not establish complete compatibility with any Hermes release.
 Implemented: fixed-module executed-code/source equality, stale-cache and helper
 drift rejection, root/ancestor identity checks, and bounded declaration/check
-counts. A SHA-pinned read-only CI workflow is provided but has not run.
-The cross-platform matrix remains unverified. The schemas are development
-contracts, not a complete stable package. Do not use for certification.
+counts. The SHA-pinned read-only CI workflow has passed on Ubuntu and macOS with
+Python 3.11, 3.12 and 3.13; see the exact run in [Status and limits](#status-and-limits).
+The schemas remain evolving development contracts, not a complete stable package.
+Do not use for certification.
 
 ## Install and exercise
 
-Python 3.11 or newer and a local POSIX filesystem are required. Install a built
-artifact (not editable):
+Python 3.11 or newer and a local POSIX filesystem are required. From the source
+checkout root, build distributions and install the wheel (not editable), preferably
+in a virtual environment. This example builds from source; it does not assume a
+PyPI release. The isolated build installs `setuptools==82.0.1` as declared in
+`pyproject.toml`; the package has no runtime dependencies.
 
 ```sh
+python -m pip install build
+python -m build
 python -m pip install dist/agent_evidence-0.1.0.dev0-py3-none-any.whl
 agent-evidence --help
 agent-evidence fixture --out /absolute/physical/path/demo-input
@@ -81,8 +89,18 @@ network calls, repair actions or policy writers are provided.
 
 ## Status and limits
 
-The only exercised host/version is recorded in `docs/verification.md` after
-artifact verification. Linux and other Python versions require execution before
-being called supported. Windows observation is unsupported. There is no release
-approval, production certification, business E2E proof or cryptographic attestation.
+[GitHub Actions run 44087269853](https://github.com/Charles-beta-he/agent-evidence/actions/runs/44087269853)
+passed for commit `cc2598ee324a90d3306ac3f6a403bd567c8c2976`: all six
+`ubuntu-latest` / `macos-latest` × Python 3.11 / 3.12 / 3.13 jobs built distributions
+and verified clean non-editable wheel and sdist installations. This is scoped
+installed-artifact evidence using synthetic inputs, not real business E2E proof
+or a guarantee for every platform or Python version. Windows observation is
+unsupported; no Python 3.14 pass is claimed.
+
+[Verification notes](docs/verification.md) preserve the earlier local macOS
+verification record and reproduction/coverage details. Their statements that CI
+has not run and Linux/additional Python versions are untested describe that earlier
+snapshot; the linked CI run above supersedes those status statements only.
+There is no production release approval, production certification, business E2E
+proof or cryptographic attestation.
 See [contracts](docs/contracts.md) and [threat model](docs/threat-model.md).
